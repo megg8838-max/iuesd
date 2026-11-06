@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ульяна заяц</title>
+<style>
+:root { color-scheme: dark; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+}
+body {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Главный экран ---------- */
+#scene1 {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: #000;
+  z-index: 10;
+  transition: opacity .8s ease;
+}
+#scene1.hide { opacity: 0; pointer-events: none; }
+.intro {
+  font-size: 18px;
+  letter-spacing: .02em;
+  color: #e6e6e6;
+}
+
+.btn {
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 400;
+  letter-spacing: .02em;
+  color: #d9d9d9;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, .45);
+  padding: 16px 34px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: color .45s ease, border-color .45s ease, box-shadow .45s ease, background .45s ease, transform .2s ease;
+}
+.btn:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, .9);
+  background: rgba(255, 255, 255, .03);
+  box-shadow: 0 0 18px rgba(255, 255, 255, .18), inset 0 0 12px rgba(255, 255, 255, .05);
+}
+.btn:focus-visible { outline: 1px solid rgba(255, 255, 255, .6); outline-offset: 4px; }
+.btn:active { transform: scale(.97); }
+
+/* ---------- Сцена с сердцем ---------- */
+#scene2 {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+#scene2.show { opacity: 1; }
+
+#bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.poop {
+  position: absolute;
+  opacity: .42;
+  animation-name: drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
+}
+@keyframes drift {
+  0%   { transform: translate(0, 0) rotate(var(--r0)); }
+  100% { transform: translate(var(--dx), var(--dy)) rotate(var(--r1)); }
+}
+
+#stage {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+  padding-bottom: 14vh;
+}
+#heart { position: relative; }
+#heart-inner { position: relative; contain: layout paint; }
+.w {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+  line-height: 1;
+  opacity: 0;
+  pointer-events: none;
+  font-weight: 600;
+}
+
+.alive #heart { animation: float 7s ease-in-out infinite; }
+.alive #heart-inner { animation: pulse 2s ease-in-out infinite; }
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  12%      { transform: scale(1.045); }
+  28%      { transform: scale(1); }
+  40%      { transform: scale(1.025); }
+  56%      { transform: scale(1); }
+}
+
+/* ---------- Вопрос под сердцем ---------- */
+#ask {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .8s ease;
+}
+#ask.show { opacity: 1; pointer-events: auto; }
+.q {
+  font-size: 18px;
+  letter-spacing: .02em;
+  color: #fff;
+  margin-bottom: 16px;
+}
+.choices {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.choice { padding: 10px 28px; font-size: 15px; min-height: 42px; }
+
+/* ---------- Окно ---------- */
+#modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .6);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .8s ease;
+}
+#modal.show { opacity: 1; pointer-events: auto; }
+.card {
+  max-width: 90vw;
+  padding: 36px 40px;
+  border: 1px solid rgba(255, 255, 255, .35);
+  border-radius: 14px;
+  background: rgba(0, 0, 0, .85);
+  box-shadow: 0 0 40px rgba(255, 255, 255, .08);
+  text-align: center;
+  backdrop-filter: blur(6px);
+  transform: translateY(12px) scale(.98);
+  transition: transform .8s cubic-bezier(.16, 1, .3, 1);
+}
+#modal.show .card { transform: none; }
+#mtext {
+  font-size: 22px;
+  letter-spacing: .02em;
+  line-height: 1.35;
+  color: #fff;
+  margin-bottom: 24px;
+}
+#mchoices:empty { display: none; }
+#pmsg {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .8s ease;
+}
+#pmsg.show { opacity: 1; }
+.q2 { font-size: 15px; letter-spacing: .02em; color: rgba(255, 255, 255, .6); }
+
+.credit {
+  position: fixed;
+  right: 16px;
+  bottom: 14px;
+  z-index: 20;
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: rgba(255, 255, 255, .5);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 699px) {
+  .btn { font-size: 17px; padding: 18px 40px; min-height: 52px; }
+  .intro { font-size: 17px; }
+  #scene2 { height: 100vh; height: 100dvh; }
+  .poop { opacity: .32; }
+  #mtext { font-size: 19px; }
+  .card { padding: 28px 24px; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="poop" viewBox="0 0 64 64">
+      <path d="M32 5c3 5 6 8 4 12 3-1 6 1 5 4 6 2 7 6 7 9H16c0-3 1-7 7-9-1-3 2-5 5-4-2-4 1-7 4-12z" fill="#7a5232"/>
+      <ellipse cx="32" cy="30" rx="13" ry="8" fill="#6a4628"/>
+      <ellipse cx="32" cy="43" rx="19" ry="9" fill="#55361f"/>
+      <ellipse cx="32" cy="54" rx="26" ry="8" fill="#3f2615"/>
+      <ellipse cx="25" cy="52" rx="8" ry="2" fill="#5e3d22" opacity=".6"/>
+    </symbol>
+  </defs>
+</svg>
+
+<section id="scene1">
+  <p class="intro">Вот сайт ульяна заяц</p>
+  <button class="btn" id="startBtn" type="button">давай жми дура</button>
+</section>
+
+<section id="scene2">
+  <div id="bg"></div>
+  <div id="stage">
+    <div id="heart">
+      <div id="heart-inner"></div>
+    </div>
+  </div>
+  <div id="ask">
+    <p class="q">еще хочешь?</p>
+    <div class="choices">
+      <button class="btn choice" id="yes" type="button">да</button>
+      <button class="btn choice" id="no" type="button">нет</button>
+    </div>
+  </div>
+</section>
+
+<div id="pmsg">
+  <p class="q">вот это все теперь</p>
+  <p class="q2">иди обратно в тг</p>
+</div>
+
+<div id="modal">
+  <div class="card">
+    <p id="mtext"></p>
+    <div class="choices" id="mchoices"></div>
+  </div>
+</div>
+
+<div class="credit">by @ocexxx</div>
+
+<script>
+(() => {
+  const TEXT = 'ульяна заяц';
+  const POOP_TEXT = 'ульяна лопата';
+  const EASES = [
+    'cubic-bezier(.16,1,.3,1)',
+    'cubic-bezier(.22,.61,.36,1)',
+    'cubic-bezier(.34,1.42,.64,1)',
+    'cubic-bezier(.7,0,.2,1)'
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const scene1 = $('scene1');
+  const scene2 = $('scene2');
+  const startBtn = $('startBtn');
+  const bg = $('bg');
+  const heart = $('heart');
+  const inner = $('heart-inner');
+  const ask = $('ask');
+  const pmsg = $('pmsg');
+  const modal = $('modal');
+  const mtext = $('mtext');
+  const mchoices = $('mchoices');
+
+  // ---- Контур сердца по параметрической формуле ----
+  const poly = [];
+  for (let i = 0; i <= 720; i++) {
+    const t = (i / 720) * Math.PI * 2;
+    const x = 16 * Math.pow(Math.sin(t), 3);
+    const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+    poly.push([x, y]);
+  }
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+  for (const [x, y] of poly) {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+  }
+
+  // ---- Фигуры: для каждой есть fit (размер) и at (отрезки строки, scanline) ----
+  const HEART = {
+    bw: maxX - minX,
+    bh: maxY - minY,
+    N: { d: 700, m: 480 },
+    gap: 5.5,
+    minFs: { d: 8, m: 6 },
+    fit(vw, vh, mobile) {
+      return Math.min((vw * (mobile ? 0.96 : 0.9)) / HEART.bw, (vh * (mobile ? 0.6 : 0.8)) / HEART.bh);
+    },
+    at(S) {
+      return (Y) => {
+        const yU = maxY - Y / S;
+        const xs = [];
+        for (let i = 0; i < poly.length - 1; i++) {
+          const [x1, y1] = poly[i];
+          const [x2, y2] = poly[i + 1];
+          if ((y1 <= yU && y2 > yU) || (y2 <= yU && y1 > yU)) {
+            xs.push(x1 + ((yU - y1) * (x2 - x1)) / (y2 - y1));
+          }
+        }
+        xs.sort((a, b) => a - b);
+        const out = [];
+        for (let k = 0; k + 1 < xs.length; k += 2) {
+          out.push([(xs[k] - minX) * S, (xs[k + 1] - minX) * S]);
+        }
+        return out;
+      };
+    }
+  };
+
+  // ============================================================
+  // Реалистичный фак по фото: средний палец длинный и прямой,
+  // остальные согнуты с читаемыми фалангами и костяшками,
+  // кулак объёмный, большой палец прижат сбоку, запястье сужается.
+  // ============================================================
+  const FAK_RECTS = [
+    // --- Средний палец (длинный, прямой) ---
+    [46.0, 4.0,  58.0, 56.0],   // основная длина
+    [46.8, 18.0, 57.2, 22.5],   // проксимальный сустав (лёгкое утолщение)
+    [47.0, 34.0, 57.0, 38.5],   // дистальный сустав
+
+    // --- Указательный (согнут, видна верхняя фаланга) ---
+    [32.5, 40.0, 45.5, 49.0],   // верхняя фаланга
+    [33.0, 47.5, 45.0, 58.0],   // средняя часть к кулаку
+
+    // --- Безымянный (согнут) ---
+    [33.5, 51.0, 45.5, 63.0],
+
+    // --- Мизинец (согнут, короче и правее) ---
+    [56.5, 46.0, 68.0, 58.5],
+
+    // --- Кулак (основной объём) ---
+    [29.0, 56.0, 71.5, 86.0],
+
+    // --- Костяшки сверху кулака (читаемые бугорки) ---
+    [33.0, 54.5, 45.0, 61.0],   // указательный
+    [46.0, 53.0, 58.0, 59.5],   // средний
+    [57.5, 54.5, 68.5, 61.0],   // мизинец / безымянный
+
+    // --- Запястье (плавно сужается вниз) ---
+    [34.0, 84.0, 66.0, 98.0]
+  ];
+
+  const FAK_ELLIPSES = [
+    // Кончик среднего пальца (мягко закруглён)
+    [52.0, 4.8, 5.6, 5.2],
+
+    // Суставы среднего пальца (лёгкие овалы)
+    [52.0, 20.2, 5.0, 3.2],
+    [52.0, 36.2, 4.8, 3.0],
+
+    // Костяшки / суставы согнутых пальцев
+    [39.0, 41.5, 5.8, 4.5],   // указательный
+    [39.5, 52.5, 5.2, 4.0],   // безымянный
+    [62.5, 48.5, 5.0, 4.2],   // мизинец
+
+    // Костяшки на верхней грани кулака
+    [39.0, 57.5, 6.0, 4.2],
+    [52.0, 56.0, 5.5, 3.8],
+    [63.0, 57.5, 5.5, 4.0],
+
+    // Большой палец (прижат сбоку, виден сустав)
+    [73.5, 70.0, 8.0, 13.5],
+    [70.5, 65.5, 5.8, 5.5],   // сустав большого пальца
+
+    // Скругления боков кулака
+    [31.5, 71.0, 5.5, 11.0],
+    [69.0, 71.0, 5.5, 11.0],
+
+    // Низ кулака / переход к запястью
+    [50.0, 86.5, 16.0, 6.5],
+
+    // Скругление запястья
+    [50.0, 96.0, 13.5, 5.0]
+  ];
+
+  // Тонкие просветы между пальцами (чтобы они читались отдельно)
+  const FAK_GAPS = [
+    // Между средним и указательным
+    [45.2, 36.0, 46.6, 56.0],
+    // Между средним и мизинцем
+    [57.2, 44.0, 58.6, 57.0],
+    // Между указательным и безымянным
+    [33.5, 48.5, 45.0, 50.5],
+    [33.8, 59.5, 45.2, 61.5],
+    // Между мизинцем и кулаком / большим
+    [67.0, 56.0, 68.5, 66.0],
+    // Небольшой просвет у основания среднего пальца
+    [45.5, 52.0, 47.0, 56.5]
+  ];
+
+  const POOP = {
+    bw: 62,
+    bh: 100,
+    minX: 24,
+    minY: 1,
+    N: { d: 1100, m: 520 },
+    gap: 5.8,
+    minFs: { d: 3.5, m: 3.5 },
+    fit(vw, vh, mobile) {
+      return Math.min((vw * (mobile ? 0.72 : 0.48)) / POOP.bw, (vh * (mobile ? 0.52 : 0.62)) / POOP.bh);
+    },
+    at(S) {
+      return (Y) => {
+        const yU = POOP.minY + Y / S;
+        let iv = [];
+        for (const [x0, y0, x1, y1] of FAK_RECTS) {
+          if (yU >= y0 && yU <= y1) iv.push([x0, x1]);
+        }
+        for (const [cx, cy, rx, ry] of FAK_ELLIPSES) {
+          const dy = (yU - cy) / ry;
+          if (Math.abs(dy) < 1) {
+            const h = rx * Math.sqrt(1 - dy * dy);
+            iv.push([cx - h, cx + h]);
+          }
+        }
+        iv.sort((a, b) => a[0] - b[0]);
+        const merged = [];
+        for (const seg of iv) {
+          const last = merged[merged.length - 1];
+          if (last && seg[0] <= last[1]) last[1] = Math.max(last[1], seg[1]);
+          else merged.push([seg[0], seg[1]]);
+        }
+        // вычитаем просветы
+        for (const [gx0, gy0, gx1, gy1] of FAK_GAPS) {
+          if (yU < gy0 || yU > gy1) continue;
+          const next = [];
+          for (const [a, b] of merged) {
+            if (gx1 <= a || gx0 >= b) { next.push([a, b]); continue; }
+            if (gx0 > a) next.push([a, gx0]);
+            if (gx1 < b) next.push([gx1, b]);
+          }
+          merged.length = 0;
+          merged.push(...next);
+        }
+        return merged.map(([a, b]) => [(a - POOP.minX) * S, (b - POOP.minX) * S]);
+      };
+    },
+    // Более объёмное освещение: свет сверху-слева, хребет среднего пальца,
+    // яркие блики на костяшках, мягкое затемнение краёв
+    colorAt(S) {
+      return (X, Y) => {
+        const ux = X / S + POOP.minX;
+        const uy = Y / S + POOP.minY;
+
+        // Базовый градиент света (сверху-слева)
+        const nx = (ux - 48) / 32;
+        const ny = (uy - POOP.minY) / POOP.bh;
+        const dist = Math.sqrt(nx * nx * 0.5 + ny * ny * 0.75);
+        const light = 1 - Math.min(1, dist * 0.9);
+        let v = 70 + 155 * light;
+
+        // Центральный хребет среднего пальца (объём)
+        const midDx = Math.abs(ux - 52);
+        if (uy < 56 && midDx < 7.5) {
+          const ridge = Math.max(0, 1 - midDx / 6.0);
+          v += ridge * 48 * (1 - ny * 0.35);
+        }
+
+        // Блики на костяшках и суставах
+        const knuckles = [
+          [39.0, 41.5, 5.5],
+          [39.5, 52.5, 5.0],
+          [62.5, 48.5, 4.8],
+          [39.0, 57.5, 5.5],
+          [52.0, 56.0, 5.0],
+          [63.0, 57.5, 5.0],
+          [70.5, 65.5, 5.0],
+          [52.0, 20.2, 4.5],
+          [52.0, 36.2, 4.2]
+        ];
+        for (const [kx, ky, kr] of knuckles) {
+          const d = Math.hypot(ux - kx, uy - ky);
+          if (d < kr) {
+            v += (1 - d / kr) * 48;
+          }
+        }
+
+        // Затемнение по краям фигуры (контур плотнее)
+        const edgeX = Math.min(Math.abs(ux - 29), Math.abs(ux - 72));
+        const edgeY = Math.min(Math.abs(uy - 4), Math.abs(uy - 98));
+        const edge = Math.min(edgeX, edgeY);
+        if (edge < 4.0) {
+          v *= 0.78 + 0.22 * (edge / 4.0);
+        }
+
+        // Лёгкий шум
+        v += (Math.random() - 0.5) * 12;
+        v = Math.max(50, Math.min(250, Math.round(v)));
+        return `rgb(${v}, ${v}, ${v})`;
+      };
+    }
+  };
+
+  // ---- Расчёт размеров и плотности ----
+  function measure(at, H) {
+    let a = 0;
+    for (let Y = 1; Y < H; Y += 2) {
+      for (const [xa, xb] of at(Y)) a += (xb - xa) * 2;
+    }
+    return a;
+  }
+
+  function params(shape) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const mobile = vw < 700;
+    const S = shape.fit(vw, vh, mobile);
+    const W = shape.bw * S;
+    const H = shape.bh * S;
+    const area = measure(shape.at(S), H);
+    const N = mobile ? shape.N.m : shape.N.d;
+    const minFs = mobile ? shape.minFs.m : shape.minFs.d;
+    const fs = Math.min(12, Math.max(minFs, Math.sqrt(area / (4.5 * N))));
+    const rowStep = fs * 0.9;
+    const colStep = Math.max(fs * shape.gap, area / (N * rowStep));
+    return { S, W, H, fs, rowStep, colStep, colorAt: shape.colorAt ? shape.colorAt(S) : null };
+  }
+
+  // ---- Раскладка точек по строкам ----
+  function layout(at, H, rowStep, colStep) {
+    const items = [];
+    for (let Y = rowStep / 2, r = 0; Y < H; Y += rowStep, r++) {
+      const offset = (r % 2) * colStep / 2;
+      for (const [xa, xb] of at(Y)) {
+        for (let X = xa + colStep / 2 + offset; X < xb; X += colStep) {
+          items.push([X, Y]);
+        }
+      }
+    }
+    return items;
+  }
+
+  function colorFor(Y, H) {
+    const c1 = [255, 214, 236];
+    const c2 = [200, 224, 255];
+    const g = Math.min(1, Math.max(0, Y / H + (Math.random() - 0.5) * 0.08));
+    return `rgb(${c1.map((v, i) => Math.round(v + (c2[i] - v) * g)).join(',')})`;
+  }
+
+  // ---- Создание элементов с текстом ----
+  function spawn(items, text, p, animate) {
+    const { W, H, fs } = p;
+    const frag = document.createDocumentFragment();
+    const cx = W / 2;
+    const cy = H / 2;
+    const maxD = Math.hypot(cx, cy) || 1;
+    let maxEnd = 0;
+
+    for (const [x, y] of items) {
+      const el = document.createElement('span');
+      el.className = 'w';
+      el.textContent = text;
+      el.style.fontSize = fs + 'px';
+
+      const X = x + (Math.random() - 0.5) * fs * 0.25;
+      const Y = y + (Math.random() - 0.5) * fs * 0.25;
+      const rot = (Math.random() - 0.5) * 8;
+      el.style.color = p.colorAt ? p.colorAt(X, Y) : colorFor(Y, H);
+
+      const finalT = `translate(${X.toFixed(1)}px, ${Y.toFixed(1)}px) translate(-50%, -50%) rotate(${rot.toFixed(1)}deg)`;
+      el.style.transform = finalT;
+      el._x = X;
+      el._y = Y;
+      el._r = rot;
+
+      if (animate) {
+        const d = Math.hypot(X - cx, Y - cy) / maxD;
+        const delay = Math.random() * 500 + d * 300;
+        const duration = 1000 + Math.random() * 700;
+        const easing = EASES[Math.floor(Math.random() * EASES.length)];
+        const spin = (Math.random() - 0.5) * 720;
+        const startT = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) translate(-50%, -50%) rotate(${(rot + spin).toFixed(1)}deg) scale(.1)`;
+        el.animate(
+          [
+            { transform: startT, opacity: 0 },
+            { transform: finalT, opacity: 1 }
+          ],
+          { duration, delay, easing, fill: 'both' }
+        );
+        maxEnd = Math.max(maxEnd, delay + duration);
+      } else {
+        el.style.opacity = '1';
+      }
+      frag.appendChild(el);
+    }
+    inner.appendChild(frag);
+    return maxEnd;
+  }
+
+  // ---- Сборка фигуры ----
+  let buildId = 0;
+  let mode = null; // 'heart' | 'poop' | null
+
+  function build(shape, text, animate, kind) {
+    const p = params(shape);
+    heart.style.width = p.W + 'px';
+    heart.style.height = p.H + 'px';
+    inner.style.width = p.W + 'px';
+    inner.style.height = p.H + 'px';
+    inner.textContent = '';
+
+    const myId = ++buildId;
+    mode = kind;
+    document.body.classList.remove('alive');
+    ask.classList.remove('show');
+    pmsg.classList.remove('show');
+    const topPx = (window.innerHeight * 0.43 + p.H / 2 + 26) + 'px';
+    ask.style.top = topPx;
+    pmsg.style.top = topPx;
+
+    const items = layout(shape.at(p.S), p.H, p.rowStep, p.colStep);
+    const maxEnd = spawn(items, text, p, animate);
+
+    const ready = () => {
+      if (myId !== buildId) return;
+      document.body.classList.add('alive');
+      if (kind === 'heart') ask.classList.add('show');
+      if (kind === 'poop') pmsg.classList.add('show');
+    };
+    if (animate) setTimeout(ready, maxEnd + 200);
+    else ready();
+  }
+
+  // ---- Разлёт текущих элементов из центра ----
+  function disperse() {
+    const cx = inner.offsetWidth / 2;
+    const cy = inner.offsetHeight / 2;
+    let maxEnd = 0;
+    for (const el of inner.children) {
+      const spin = (Math.random() - 0.5) * 540;
+      const to = `translate(${(el._x + (el._x - cx) * 2.5).toFixed(1)}px, ${(el._y + (el._y - cy) * 2.5).toFixed(1)}px) translate(-50%, -50%) rotate(${(el._r + spin).toFixed(1)}deg)`;
+      const delay = Math.random() * 400;
+      const duration = 1200 + Math.random() * 800;
+      el.animate(
+        [
+          { transform: el.style.transform, opacity: 1 },
+          { transform: to, opacity: 0 }
+        ],
+        { duration, delay, easing: 'cubic-bezier(.7,0,.2,1)', fill: 'forwards' }
+      );
+      maxEnd = Math.max(maxEnd, delay + duration);
+    }
+    return maxEnd;
+  }
+
+  // ---- Окно ----
+  function showModal(text, choices) {
+    mtext.textContent = text;
+    mchoices.innerHTML = '';
+    for (const c of choices) {
+      const b = document.createElement('button');
+      b.className = 'btn choice';
+      b.type = 'button';
+      b.textContent = c.label;
+      b.addEventListener('click', c.onClick);
+      mchoices.appendChild(b);
+    }
+    modal.classList.add('show');
+  }
+  function hideModal() {
+    modal.classList.remove('show');
+  }
+
+  // ---- Возврат на главный экран ----
+  function showMain() {
+    hideModal();
+    buildId++;
+    mode = null;
+    document.body.classList.remove('alive');
+    ask.classList.remove('show');
+    pmsg.classList.remove('show');
+    scene2.classList.remove('show');
+    scene1.classList.remove('hide');
+    startBtn.disabled = false;
+    setTimeout(() => {
+      if (!scene2.classList.contains('show')) inner.textContent = '';
+    }, 1000);
+  }
+
+  // ---- Фоновые какашки (SVG) ----
+  let poopsSpawned = false;
+  function spawnPoops() {
+    if (poopsSpawned) return;
+    poopsSpawned = true;
+    const mobile = window.innerWidth < 700;
+    const count = mobile ? 8 : 12;
+    const frag = document.createDocumentFragment();
+    const NS = 'http://www.w3.org/2000/svg';
+    for (let i = 0; i < count; i++) {
+      let left, top;
+      do {
+        left = Math.random() * 94 + 3;
+        top = Math.random() * 90 + 4;
+      } while (Math.abs(left - 50) < 24 && Math.abs(top - 50) < 32);
+      const size = 26 + Math.random() * 34;
+      const svg = document.createElementNS(NS, 'svg');
+      svg.setAttribute('viewBox', '0 0 64 64');
+      svg.setAttribute('class', 'poop');
+      svg.style.left = left + '%';
+      svg.style.top = top + '%';
+      svg.style.width = size + 'px';
+      svg.style.height = size + 'px';
+      svg.style.setProperty('--dx', ((Math.random() - 0.5) * 60).toFixed(1) + 'px');
+      svg.style.setProperty('--dy', ((Math.random() - 0.5) * 60).toFixed(1) + 'px');
+      svg.style.setProperty('--r0', ((Math.random() - 0.5) * 30).toFixed(1) + 'deg');
+      svg.style.setProperty('--r1', ((Math.random() - 0.5) * 30).toFixed(1) + 'deg');
+      svg.style.animationDuration = (9 + Math.random() * 7).toFixed(1) + 's';
+      svg.style.animationDelay = (-Math.random() * 10).toFixed(1) + 's';
+      const use = document.createElementNS(NS, 'use');
+      use.setAttribute('href', '#poop');
+      use.setAttribute('width', '64');
+      use.setAttribute('height', '64');
+      svg.appendChild(use);
+      frag.appendChild(svg);
+    }
+    bg.appendChild(frag);
+  }
+
+  // ---- Кнопки ----
+  startBtn.addEventListener('click', () => {
+    startBtn.disabled = true;
+    scene1.classList.add('hide');
+    setTimeout(() => {
+      scene2.classList.add('show');
+      spawnPoops();
+      build(HEART, TEXT, true, 'heart');
+    }, 500);
+  });
+
+  $('yes').addEventListener('click', () => {
+    ask.classList.remove('show');
+    const t = disperse();
+    setTimeout(() => {
+      showModal('точно?', [
+        {
+          label: 'точно',
+          onClick: () => {
+            hideModal();
+            setTimeout(() => build(POOP, POOP_TEXT, true, 'poop'), 500);
+          }
+        },
+        {
+          label: 'или все таки нет?',
+          onClick: () => showMain()
+        }
+      ]);
+    }, t + 300);
+  });
+
+  $('no').addEventListener('click', () => {
+    ask.classList.remove('show');
+    const t = disperse();
+    setTimeout(() => showModal('ну значит выходи нахуй', []), t + 300);
+  });
+
+  // ---- Перестройка при изменении размера окна ----
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    if (mode === null) return;
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (mode === 'heart') build(HEART, TEXT, false, 'heart');
+      else if (mode === 'poop') build(POOP, POOP_TEXT, false, 'poop');
+    }, 250);
+  });
+})();
+</script>
+</body>
+</html>
